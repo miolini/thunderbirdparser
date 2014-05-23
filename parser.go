@@ -11,6 +11,7 @@ type ThunderbirdParser struct {
 	httpClient *http.Client
 	serviceUrl string 
 	threads int
+	domainSettings map[string]ClientConfig
 }
 
 func ThunderbirdParserCreate(threads int) (p *ThunderbirdParser) {
@@ -18,6 +19,7 @@ func ThunderbirdParserCreate(threads int) (p *ThunderbirdParser) {
 	p.serviceUrl = "https://autoconfig.thunderbird.net/v1.1/"
 	p.httpClient = new(http.Client)
 	p.threads = threads
+	p.domainSettings = make(map[string]ClientConfig)
 	return
 }
 
@@ -45,12 +47,9 @@ func (p *ThunderbirdParser) DownloadAll() (domainSettings map[string]ClientConfi
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(p.threads)
 
-	domainSettings = make(map[string]ClientConfig)
-
 	for i:=0; i < p.threads; i++ {
 		go func() {
 			defer func() {
-				log.Printf("fetcher exit")
 				waitGroup.Done()
 			}()
 			for {
@@ -76,7 +75,7 @@ func (p *ThunderbirdParser) DownloadAll() (domainSettings map[string]ClientConfi
 		for config := range configChan {
 			for _, ep := range config.EmailProviders {
 				for _, domain := range ep.Domains {
-					domainSettings[domain] = config
+					p.domainSettings[domain] = config
 				}
 			}
 		}
@@ -86,8 +85,11 @@ func (p *ThunderbirdParser) DownloadAll() (domainSettings map[string]ClientConfi
 		configUrlChan <- p.serviceUrl + match[1]
 	}
 	close(configUrlChan)
-	log.Printf("parser exit")
-
 	waitGroup.Wait()
+	domainSettings = p.domainSettings
 	return
+}
+
+func (p *ThunderbirdParser) SearchDomain(domain string) ClientConfig {
+	return p.domainSettings[domain]
 }

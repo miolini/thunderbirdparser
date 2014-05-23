@@ -4,7 +4,7 @@ import "testing"
 // import "encoding/json"
 // import "encoding/xml"
 
-func TestDownloadAll(t *testing.T) {
+func TestAll(t *testing.T) {
 	var err error
 	p := ThunderbirdParserCreate(10)
 	t.Logf("test thunderbird parser: download all")
@@ -13,6 +13,9 @@ func TestDownloadAll(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("founded %d domains", len(settings))
+	domain := "yandex.ru"
+	t.Logf("search domain: %s", domain)
+	t.Logf("search result: %s", p.SearchDomain(domain))
 }
 
 /*
